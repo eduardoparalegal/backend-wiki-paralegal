@@ -9,30 +9,25 @@ const morgan = require('morgan');
 const config = require('./config/config');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
 // Connect to MongoDB
 connectDB();
 
-// Security middleware
+// Middleware
 app.use(helmet());
 app.use(mongoSanitize());
 app.use(morgan('dev'));
-
-// Body parser
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// CORS configuration
+// CORS
 app.use(cors({
   origin: config.CORS_ORIGINS,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  credentials: true
 }));
 
 // Rate limiter
@@ -45,41 +40,22 @@ const loginLimiter = rateLimit({
 // Routes
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', authRoutes);
-app.use('/api', userRoutes);
 
-// Health check route
+// Health check
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString()
-  });
+  res.status(200).json({ status: 'ok' });
 });
 
-// Error handling middleware
-app.use((req, res, next) => {
-  res.status(404).json({ message: 'Ruta no encontrada' });
-});
-
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(err.status || 500).json({
-    message: err.message || 'Error interno del servidor',
+  res.status(500).json({
+    message: 'Error interno del servidor',
     error: process.env.NODE_ENV === 'development' ? err : {}
   });
 });
 
 const PORT = config.PORT || 5000;
-const server = app.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Servidor ejecutándose en puerto ${PORT}`);
 });
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM recibido. Cerrando servidor...');
-  server.close(() => {
-    console.log('Proceso terminado');
-    process.exit(0);
-  });
-});
-
-module.exports = app;
