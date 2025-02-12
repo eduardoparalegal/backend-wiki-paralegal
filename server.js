@@ -6,9 +6,9 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const config = require('./config/config');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const { PORT, CORS_ORIGINS } = require('./config/config');
 
 const app = express();
 
@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 // CORS configuration
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || config.CORS_ORIGINS.indexOf(origin) !== -1) {
+    if (!origin || CORS_ORIGINS.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -61,36 +61,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = config.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Servidor ejecutándose en puerto ${PORT}`);
+const serverPort = PORT || 5000;
+app.listen(serverPort, () => {
+  console.log(`Servidor ejecutándose en puerto ${serverPort}`);
 });
-
-// config/db.js
-const mongoose = require('mongoose');
-const config = require('./config');
-
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(config.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-    console.log(`Database name: ${conn.connection.name}`);
-
-    // Test the connection
-    await mongoose.connection.db.admin().ping();
-    console.log('Database ping successful');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    if (error.name === 'MongoServerError') {
-      console.error('MongoDB Server Error Code:', error.code);
-      console.error('MongoDB Server Error Message:', error.errmsg);
-    }
-    process.exit(1);
-  }
-};
-
-module.exports = connectDB;
