@@ -38,8 +38,7 @@ const loginLimiter = rateLimit({
 });
 
 // Routes
-app.use('/api/auth/login', loginLimiter);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes); // Monta las rutas de autenticación bajo /api/auth
 
 // Health check
 app.get('/health', (req, res) => {
